@@ -14,29 +14,56 @@ class FieldSelector
 	 */
 	public static function init ( $input )
 	{
-		if (!self::is_assoc($input))
-			error_log("FieldSelector::init expects associative array");
-		
-		foreach ( $input as $key => $val )
-		{
-			self::$state[$key] = ( is_string($val) ) ? self::deserialize( $val ) : ( ( is_array($val) ) ? $val : array() );
-		}
+		self::add_keys( $input );
 		
 		self::$init = TRUE;
 	}
 	
 	/**
-	 * Check if a key is selected.
-	 * 
+	 * Add multiple keys to the current state
+	 *
+	 * @author Andrew Hammond
+	 */
+	public static function add_keys ( $array )
+	{
+		foreach ( $input as $key => $val )
+		{
+			self::add_key( $key, $val );
+		}
+	}
+	
+	/**
+	 * Add one key to the current state
+	 *
+	 * @param string $key - The name of the key
+	 * @param array $val - A FieldSelector-style array
+	 * @author Andrew Hammond
+	 */
+	public static function add_key ( $key, $val )
+	{
+		self::$state[$key] = ( is_string($val) ) ? self::deserialize( $val ) : ( ( is_array($val) ) ? $val : array() );
+	}
+	
+	/**
+	 * Remove a key from the current state
+	 *
+	 * @param string $key - The key to remove
+	 * @author Andrew Hammond
+	 */
+	public static function remove_key ( $key )
+	{
+		unset( self::$state[$key] );
+	}
+	
+	/**
+	 * Get a key and it's sub keys
+	 *
 	 * @param string $keyXPath - the URL-like identifier for the key ( fields/general/email ) will check 3 levels deep in self::$state
 	 * @param string $rootKey - the key of the root resource (optional)
 	 * @author Andrew Hammond
 	 */
-	public static function is_selected ( $keyXPath, $rootKey = null )
+	private function get_key ( $keyXPath, $rootKey = NULL )
 	{
-		if (!self::$init)
-			error_log("FieldSelector not initiated yet. Can't check is_selected for ($keyXPath)");
-		
 		$path = explode( '/', rtrim($keyXPath,'/') );
 		
 		
@@ -58,17 +85,30 @@ class FieldSelector
 				// is this the last element?
 				if ( empty($path) )
 				{
-					// return true if this is a non-empty variable
-					// return empty( $rabbitHole[$key] );
-					// or.. return weather the current index evaluates to TRUE/FALSE
-					return (boolean) $rabbitHole[$key];
+					// found it
+					return $rabbitHole[$key];
 				}
 				else
 				{
+					// *jedi mind trick* these are not the keys you're looking for
 					$rabbitHole = $rabbitHole[$key];
 				}
 			}
 		}
+	}
+	
+	/**
+	 * Check if a key is selected.
+	 * 
+	 * @param string $keyXPath - the URL-like identifier for the key ( fields/general/email ) will check 3 levels deep in self::$state
+	 * @param string $rootKey - the key of the root resource (optional)
+	 * @author Andrew Hammond
+	 */
+	public static function is_selected ( $keyXPath, $rootKey = NULL )
+	{
+		$path = explode( '/', rtrim($keyXPath,'/') );
+		
+		return (boolean) self::get_key( $keyXPath, $rootKey );
 	}
 	
 	/**
@@ -84,18 +124,24 @@ class FieldSelector
 		
 		$last = count( $arr );
 		$i = 0;
-		foreach ( $arr as $key => $subArr )
+		foreach ( $arr as $key => $val )
 		{
-			if ( is_array( $subArr ) )
+			$added_key = TRUE;
+			
+			if ( is_array( $val ) )
 			{
-				$serialized .= $key . ':' . self::serialize( $subArr );
+				$serialized .= $key . ':' . self::serialize( $val );
 			}
-			else
+			else if ( $val === 1 ) // enforce standard of using 1 (helps with tests)
 			{
 				$serialized .= $key;
 			}
+			else
+			{
+				$added_key = FALSE;
+			}
 			
-			if ( $i+1 !== $last )
+			if ( $added_key && $i+1 !== $last )
 				$serialized .= ',';
 			
 			$i++;

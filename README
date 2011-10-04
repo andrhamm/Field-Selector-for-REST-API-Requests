@@ -1,5 +1,5 @@
 Serialize
-```php
+``` php
 $fields = array(
   'general'	=> 1,
 	'email'		=> array(
@@ -28,13 +28,13 @@ $serialized:
 
 
 Deserialize
-```php
+``` php
 $deserialized = array();
 FieldSelector::deserialize($serialized, $deserialized);
 ```
 
 Check if a field is selected
-```php
+``` php
 FieldSelector::init(array('fields'=>$fields));
 FieldSelector::is_selected('fields/work/title'); // false
 FieldSelector::is_selected('fields/general'); // true
