@@ -22,13 +22,15 @@ class FieldSelector
 	/**
 	 * Add multiple keys to the current state
 	 *
+	 * @param array $keyArr - array of FieldSelector-style arrays to add to subject
+	 * @param array $subject - the FieldSelector-style array (if other than $state) to add the key to
 	 * @author Andrew Hammond
 	 */
-	public static function add_keys ( $array )
+	public static function add_keys ( $keyArr, &$subject = NULL )
 	{
-		foreach ( $input as $key => $val )
+		foreach ( $keyArr as $key => $val )
 		{
-			self::add_key( $key, $val );
+			self::add_key( $key, $val, $subject );
 		}
 	}
 	
@@ -37,43 +39,47 @@ class FieldSelector
 	 *
 	 * @param string $key - The name of the key
 	 * @param array $val - A FieldSelector-style array
+	 * @param array $subject - the FieldSelector-style array (if other than $state) to add the key to
 	 * @author Andrew Hammond
 	 */
-	public static function add_key ( $key, $val )
+	public static function add_key ( $key, $val, &$subject = NULL )
 	{
-		self::$state[$key] = ( is_string($val) ) ? self::deserialize( $val ) : ( ( is_array($val) ) ? $val : array() );
+		$state = ( isset($subject) && is_array($subject) ) ? $subject : self::$state;
+		
+		$state[$key] = ( is_string($val) ) ? self::deserialize( $val ) : ( ( is_array($val) ) ? $val : array() );
 	}
 	
 	/**
-	 * Remove a key from the current state
+	 * Remove a key from the subject
 	 *
-	 * @param string $key - The key to remove
+	 * @param string $key - the key to unset
+	 * @param array $subject - the FieldSelector-style array (if other than $state) to remove the key from
 	 * @author Andrew Hammond
 	 */
-	public static function remove_key ( $key )
+	public static function remove_key ( $key, &$subject = NULL )
 	{
-		unset( self::$state[$key] );
+		$state = ( isset($subject) && self::is_assoc($subject) ) ? $subject : self::$state;
+		
+		unset( $state['$key'] );
 	}
 	
 	/**
-	 * Get a key and it's sub keys
+	 * Get a subset of keys
 	 *
 	 * @param string $keyXPath - the URL-like identifier for the key ( fields/general/email ) will check 3 levels deep in self::$state
-	 * @param string $rootKey - the key of the root resource (optional)
+	 * @param array $subject - the FieldSelector-style array (if other than $state)
+	 * @return reference to 
 	 * @author Andrew Hammond
 	 */
-	private function get_key ( $keyXPath, $rootKey = NULL )
+	public function get_key ( $keyXPath, &$subject = NULL )
 	{
 		$path = explode( '/', rtrim($keyXPath,'/') );
 		
+		$rabbitHole = ( isset($subject) && is_array($subject) ) ? $subject : self::$state;
 		
-		if ( isset($rootKey) && is_string($rootKey) )
-			array_unshift($path,$rootKey);
-		
-		$rabbitHole = self::$state;
 		while ( !empty( $path ) )
 		{
-			$key 			= array_shift( $path );
+			$key = array_shift( $path );
 			
 			if ( !array_key_exists( $key, $rabbitHole ) )
 			{
@@ -101,14 +107,14 @@ class FieldSelector
 	 * Check if a key is selected.
 	 * 
 	 * @param string $keyXPath - the URL-like identifier for the key ( fields/general/email ) will check 3 levels deep in self::$state
-	 * @param string $rootKey - the key of the root resource (optional)
+	 * @param array $subject - the FieldSelector-style array (if other than $state)
 	 * @author Andrew Hammond
 	 */
-	public static function is_selected ( $keyXPath, $rootKey = NULL )
+	public static function is_selected ( $keyXPath, &$subject = NULL )
 	{
 		$path = explode( '/', rtrim($keyXPath,'/') );
 		
-		return (boolean) self::get_key( $keyXPath, $rootKey );
+		return (boolean) self::get_key( $keyXPath, $subject );
 	}
 	
 	/**
