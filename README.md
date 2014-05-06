@@ -1,4 +1,4 @@
-Serialize
+## Serialize
 ```php
 $fields = array(
   'general'	=> 1,
@@ -19,25 +19,21 @@ $fields = array(
 	)
 );
 
-$serialized = FieldSelector::serialize($fields);
+$serialized = FieldSelector::serialize($fields); // =>  "(general,email:(id,email),work:(title,company:(name)),education:(school:(name)))"
 ```
 
-$serialized:
 
-(general,email:(id,email),work:(title,company:(name)),education:(school:(name)))
-
-
-Deserialize
+## Deserialize
 ```php
 $deserialized = array();
 FieldSelector::deserialize($serialized, $deserialized);
 ```
 
-Check if a field is selected
+## Check if a field is selected
 ```php
 FieldSelector::init(array('fields'=>$fields));
-FieldSelector::is_selected('fields/work/title'); // false
-FieldSelector::is_selected('fields/general'); // true
-FieldSelector::is_selected('fields/email'); // true
-FieldSelector::is_selected('email/email','fields); // true
+FieldSelector::is_selected('fields/work/title');   // => false
+FieldSelector::is_selected('fields/general');      // => true
+FieldSelector::is_selected('fields/email');        // => true
+FieldSelector::is_selected('email/email',$fields); // => true
 ```
